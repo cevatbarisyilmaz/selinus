@@ -11,6 +11,7 @@ type Function interface {
 	GetType() *Type
 	GetParameters() []*Parameter
 	GetReturnType() *Type
+	GetScope() *Scope
 }
 
 type CustomFunction struct {
@@ -18,9 +19,16 @@ type CustomFunction struct {
 	Parameters []*Parameter
 	Typ        *Type
 	ReturnType *Type
+	Scope      *Scope
+}
+
+func (c *CustomFunction) GetScope() *Scope {
+	return c.Scope
 }
 
 func (c *CustomFunction) Execute(scope *Scope) *Return {
+	scope.CreateBlock()
+	defer scope.ReleaseBlock()
 	node := c.EntryNode
 	for node != nil {
 		internalReturn := node.Execute(scope)

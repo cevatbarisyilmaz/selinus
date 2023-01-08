@@ -21,6 +21,7 @@ const (
 	Function
 	Summation
 	Subtraction
+	Divide
 	Equal
 	Greater
 	Less
@@ -298,14 +299,23 @@ func formParseNode(tokens []ParseToken) (*ParseNode, error) {
 			LexicelToken: t2,
 		}, nil
 	case lexer.Operator:
+		var leftChild *ParseNode
+		leaveLeftChildNil := false
 		if currentIndex == 0 {
-			return nil, errors.New("expected token before operation " + t2.ToString())
-		} else if currentIndex == len(tokens)-1 {
+			if !(len(tokens) > 1 && t2.GetValue() == lexer.Minus) {
+				return nil, errors.New("expected token before operation " + t2.ToString())
+			}
+			leaveLeftChildNil = true
+		}
+		if currentIndex == len(tokens)-1 {
 			return nil, errors.New("expected token after operation " + t2.ToString())
 		}
-		leftChild, err := formParseNode(tokens[:currentIndex])
-		if err != nil {
-			return nil, err
+		var err error
+		if !leaveLeftChildNil {
+			leftChild, err = formParseNode(tokens[:currentIndex])
+			if err != nil {
+				return nil, err
+			}
 		}
 		rightChild, err := formParseNode(tokens[currentIndex+1:])
 		if err != nil {
@@ -325,6 +335,8 @@ func formParseNode(tokens []ParseToken) (*ParseNode, error) {
 			nodeType = Greater
 		case lexer.Less:
 			nodeType = Less
+		case lexer.Divide:
+			nodeType = Divide
 		}
 		return &ParseNode{NodeType: nodeType, Children: []*ParseNode{leftChild, rightChild}, next: nil, LexicelToken: t2}, nil
 	case lexer.Text:
@@ -435,7 +447,11 @@ func formParseNode(tokens []ParseToken) (*ParseNode, error) {
 			if err != nil {
 				return nil, err
 			}
-			return &ParseNode{NodeType: Return, LexicelToken: t2, Children: []*ParseNode{temp}}, nil
+			var children []*ParseNode
+			if temp != nil {
+				children = []*ParseNode{temp}
+			}
+			return &ParseNode{NodeType: Return, LexicelToken: t2, Children: children}, nil
 		}
 	}
 	return nil, nil

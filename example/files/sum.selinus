@@ -1,0 +1,18 @@
+function int sum(int a, int b)
+    return a + b
+
+function int sum3(int a, int b, int c)
+    return sum(sum(a, b), c)
+
+print("Enter the first integer: ")
+int a = scanInteger()
+print("Enter the second integer: ")
+int b = scanInteger()
+print("Enter the third integer: ")
+int c = scanInteger()
+
+int result = sum3(a, b, c)
+println("Result is " + result)
+
+print("Enter divider: ")
+println("New result is: " + result / scanInteger())

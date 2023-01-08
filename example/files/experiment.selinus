@@ -1,0 +1,79 @@
+type DoubleLinkedList[var T]()
+    type Node(public T data)
+        public Node prev, next
+        end
+
+    Node current
+
+    function add(T data)
+        if current == null
+            current = Node(data)
+        else
+            current.next = Node(data)
+            end
+        current = current.next
+        end
+
+    function T get()
+        if current.next != null
+            if current.prev != null
+                current = current.prev
+                return current.next.next.data
+            temp = current.next
+            current.next = nil
+            return temp
+        if current != null
+            temp = current
+            current = null
+            return temp.data
+        return null
+
+    end
+
+type LazyGetter[K, V](getter func(K) V)
+    cache = Map[K, V]()
+
+    func Get(k K) V
+        limit
+            if !cache.has(k)
+                cache[k] = getter(k)
+            end
+        return cache[k]
+    end
+end
+
+func LimitJob(jobs []func(), maxParallelJobs int)
+    thread
+        loop jobs as job
+            thread
+                limit maxParallelJobs
+                    job()
+                    end
+                end
+            end
+        end
+    end
+
+
+loop map as key, value
+
+
+type Soldier(Name string)
+    func Greet()
+        println("Hey " + Name + "!")
+    end
+end
+
+type AngrySoldier(Name string) as Soldier
+    Name = "Fucking " + Name
+end
+
+type Greetable
+    func Greet()
+end
+
+let soldiers = []Greetable(Soldier("Jo"), AngrySoldier("Tom"))
+
+loop soldiers as soldier iro
+    soldier.Greet()
+end

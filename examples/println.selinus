@@ -1,6 +1,0 @@
-function println(string text)
-    print(text + "\n")
-    end
-
-println("Hey")
-println("You!")

@@ -11,53 +11,30 @@ import (
 
 type VariableNode struct {
 	name string
-	next core.Node
 }
 
 func (node *VariableNode) Execute(scope *core.Scope) *core.Return {
-	return &core.Return{ReturnType: core.NOTHING, Pointer: scope.Get(node.name)}
-}
-
-func (node *VariableNode) Next() core.Node {
-	return node.next
-}
-
-func (node *VariableNode) SetNext(o core.Node) {
-	node.next = o
+	scopeResult := scope.Get(node.name)
+	if scopeResult.ReturnType == core.EXCEPTION {
+		return scopeResult
+	}
+	return &core.Return{ReturnType: core.NOTHING, Pointer: scopeResult.Pointer}
 }
 
 type StringNode struct {
 	value string
-	next  core.Node
 }
 
 func (node *StringNode) Execute(scope *core.Scope) *core.Return {
-	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.StringType, Variable: &builtin.String{Value: node.value}}}
-}
-
-func (node *StringNode) Next() core.Node {
-	return node.next
-}
-
-func (node *StringNode) SetNext(o core.Node) {
-	node.next = o
+	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: core.StringType, Variable: &core.String{Value: node.value}}}
 }
 
 type BooleanNode struct {
 	value bool
-	next  core.Node
 }
 
 func (node *BooleanNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.BooleanType, Variable: &builtin.Boolean{Value: node.value}}}
-}
-
-func (node *BooleanNode) Next() core.Node {
-	return node.next
-}
-
-func (node *BooleanNode) SetNext(o core.Node) {
-	node.next = o
 }
 
 type FunctionNode struct {
@@ -66,7 +43,6 @@ type FunctionNode struct {
 	returnType *core.Type
 	parameters []*core.Parameter
 	entryNode  core.Node
-	next       core.Node
 }
 
 func (node *FunctionNode) Execute(scope *core.Scope) *core.Return {
@@ -75,42 +51,24 @@ func (node *FunctionNode) Execute(scope *core.Scope) *core.Return {
 		generics = append(generics, parameter.Typ)
 	}
 	typ := &core.Type{Name: "CustomFunction", Parent: builtin.FunctionType, Generic: true, Generics: generics}
-	variable := &core.CustomFunction{EntryNode: node.entryNode, Parameters: node.parameters, Typ: typ, ReturnType: node.returnType}
+	variable := &core.CustomFunction{Scope: scope.CloneWithName(node.name + "Function"), EntryNode: node.entryNode, Parameters: node.parameters, Typ: typ, ReturnType: node.returnType}
 	if !node.lambda {
 		scope.DeclareAndSet(node.name, &core.Pointer{Typ: typ, Variable: variable})
 	}
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: typ, Variable: variable}}
 }
 
-func (node *FunctionNode) Next() core.Node {
-	return node.next
-}
-
-func (node *FunctionNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type IntegerNode struct {
 	value int
-	next  core.Node
 }
 
 func (node *IntegerNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: &builtin.Integer{Value: node.value}}}
 }
 
-func (node *IntegerNode) Next() core.Node {
-	return node.next
-}
-
-func (node *IntegerNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type SetNode struct {
 	leftSide  core.Node
 	rightSide core.Node
-	next      core.Node
 }
 
 func (node *SetNode) Execute(scope *core.Scope) *core.Return {
@@ -126,18 +84,9 @@ func (node *SetNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: r.Pointer}
 }
 
-func (node *SetNode) Next() core.Node {
-	return node.next
-}
-
-func (node *SetNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type DeclarationNode struct {
 	typ        *core.Type
 	identifier string
-	next       core.Node
 }
 
 func (node *DeclarationNode) Execute(scope *core.Scope) *core.Return {
@@ -146,18 +95,9 @@ func (node *DeclarationNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: p}
 }
 
-func (node *DeclarationNode) Next() core.Node {
-	return node.next
-}
-
-func (node *DeclarationNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type ConditionNode struct {
 	condition core.Node
 	root      core.Node
-	next      core.Node
 }
 
 func (node *ConditionNode) Execute(scope *core.Scope) *core.Return {
@@ -167,6 +107,7 @@ func (node *ConditionNode) Execute(scope *core.Scope) *core.Return {
 	}
 	if (internalReturn.Pointer.Variable).(*builtin.Boolean).Value {
 		scope.CreateBlock()
+		defer scope.ReleaseBlock()
 		current := node.root
 		for current != nil {
 			internalReturn = current.Execute(scope)
@@ -175,27 +116,18 @@ func (node *ConditionNode) Execute(scope *core.Scope) *core.Return {
 			}
 			current = current.Next()
 		}
-		scope.ReleaseBlock()
 	}
 	return &core.Return{ReturnType: core.NOTHING, Pointer: nil}
-}
-
-func (node *ConditionNode) Next() core.Node {
-	return node.next
-}
-
-func (node *ConditionNode) SetNext(o core.Node) {
-	node.next = o
 }
 
 type LoopNode struct {
 	condition core.Node
 	root      core.Node
-	next      core.Node
 }
 
 func (node *LoopNode) Execute(scope *core.Scope) *core.Return {
 	scope.CreateBlock()
+	defer scope.ReleaseBlock()
 	for {
 		internalReturn := node.condition.Execute(scope)
 		if internalReturn.ReturnType != core.NOTHING {
@@ -219,21 +151,11 @@ func (node *LoopNode) Execute(scope *core.Scope) *core.Return {
 			current = current.Next()
 		}
 	}
-	scope.ReleaseBlock()
 	return &core.Return{ReturnType: core.NOTHING, Pointer: nil}
-}
-
-func (node *LoopNode) Next() core.Node {
-	return node.next
-}
-
-func (node *LoopNode) SetNext(o core.Node) {
-	node.next = o
 }
 
 type CsvNode struct {
 	children []core.Node
-	next     core.Node
 }
 
 func (node *CsvNode) Execute(scope *core.Scope) *core.Return {
@@ -251,18 +173,9 @@ func (node *CsvNode) Execute(scope *core.Scope) *core.Return {
 	}
 }
 
-func (node CsvNode) Next() core.Node {
-	return node.next
-}
-
-func (node CsvNode) SetNext(nextNode core.Node) {
-	node.next = nextNode
-}
-
 type SummationNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *SummationNode) Execute(scope *core.Scope) *core.Return {
@@ -278,24 +191,23 @@ func (node *SummationNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: variable}}
 }
 
-func (node *SummationNode) Next() core.Node {
-	return node.next
-}
-
-func (node *SummationNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type SubtractionNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *SubtractionNode) Execute(scope *core.Scope) *core.Return {
-	l := node.left.Execute(scope)
-	if l.ReturnType != core.NOTHING {
-		return l
+	var l *core.Return
+	if node.left != nil {
+		l = node.left.Execute(scope)
+		if l.ReturnType != core.NOTHING {
+			return l
+		}
+	} else {
+		l = &core.Return{
+			ReturnType: core.NOTHING,
+			Pointer:    builtin.NewIntegerPointer(0),
+		}
 	}
 	r := node.right.Execute(scope)
 	if r.ReturnType != core.NOTHING {
@@ -305,18 +217,31 @@ func (node *SubtractionNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: variable}}
 }
 
-func (node *SubtractionNode) Next() core.Node {
-	return node.next
+type DivisionNode struct {
+	left  core.Node
+	right core.Node
 }
 
-func (node *SubtractionNode) SetNext(o core.Node) {
-	node.next = o
+func (node *DivisionNode) Execute(scope *core.Scope) *core.Return {
+	l := node.left.Execute(scope)
+	if l.ReturnType != core.NOTHING {
+		return l
+	}
+	r := node.right.Execute(scope)
+	if r.ReturnType != core.NOTHING {
+		return r
+	}
+	divider := (r.Pointer.Variable).(*builtin.Integer).Value
+	if divider == 0 {
+		return core.NewExceptionReturn("division by zero")
+	}
+	variable := &builtin.Integer{Value: (l.Pointer.Variable).(*builtin.Integer).Value / divider}
+	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: variable}}
 }
 
 type EqualityNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *EqualityNode) Execute(scope *core.Scope) *core.Return {
@@ -332,18 +257,9 @@ func (node *EqualityNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.BooleanType, Variable: variable}}
 }
 
-func (node *EqualityNode) Next() core.Node {
-	return node.next
-}
-
-func (node *EqualityNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type GreaterNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *GreaterNode) Execute(scope *core.Scope) *core.Return {
@@ -359,18 +275,9 @@ func (node *GreaterNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.BooleanType, Variable: variable}}
 }
 
-func (node *GreaterNode) Next() core.Node {
-	return node.next
-}
-
-func (node *GreaterNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type LessNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *LessNode) Execute(scope *core.Scope) *core.Return {
@@ -386,18 +293,9 @@ func (node *LessNode) Execute(scope *core.Scope) *core.Return {
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.BooleanType, Variable: variable}}
 }
 
-func (node *LessNode) Next() core.Node {
-	return node.next
-}
-
-func (node *LessNode) SetNext(o core.Node) {
-	node.next = o
-}
-
 type ConcatenationNode struct {
 	left  core.Node
 	right core.Node
-	next  core.Node
 }
 
 func (node *ConcatenationNode) Execute(scope *core.Scope) *core.Return {
@@ -409,57 +307,45 @@ func (node *ConcatenationNode) Execute(scope *core.Scope) *core.Return {
 	if r.ReturnType != core.NOTHING {
 		return r
 	}
-	variable := &builtin.String{Value: (l.Pointer.Variable).(builtin.StringInterface).GetStringValue() + (r.Pointer.Variable).(builtin.StringInterface).GetStringValue()}
+	variable := &core.String{Value: (l.Pointer.Variable).(builtin.StringInterface).GetStringValue() + (r.Pointer.Variable).(builtin.StringInterface).GetStringValue()}
 	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: variable}}
-}
-
-func (node *ConcatenationNode) Next() core.Node {
-	return node.next
-}
-
-func (node *ConcatenationNode) SetNext(o core.Node) {
-	node.next = o
 }
 
 type FunctionCallNode struct {
 	name       string
 	parameters []core.Node
-	next       core.Node
 }
 
-func (node *FunctionCallNode) Execute(scope *core.Scope) *core.Return {
-	a := scope.Get(node.name)
-	b := a.Variable
+func (node *FunctionCallNode) Execute(localScope *core.Scope) *core.Return {
+	scopeResult := localScope.Get(node.name)
+	if scopeResult.ReturnType == core.EXCEPTION {
+		return scopeResult
+	}
+	b := scopeResult.Pointer.Variable
 	function := b.(core.Function)
-	scope.CreateBlock()
+	functionScope := function.GetScope().Clone()
+	functionScope.CreateBlock()
+	defer functionScope.ReleaseBlock()
 	i := 0
 	for _, e := range node.parameters {
-		t := e.Execute(scope)
+		t := e.Execute(localScope)
 		if t.ReturnType != core.NOTHING {
 			return t
 		}
-		scope.Declare(function.GetParameters()[i].Name, function.GetParameters()[i].Typ)
-		scope.Set(function.GetParameters()[i].Name, t.Pointer)
+		functionScope.Declare(function.GetParameters()[i].Name, function.GetParameters()[i].Typ)
+		functionScope.Set(function.GetParameters()[i].Name, t.Pointer)
 		i++
 	}
 	for x := len(function.GetParameters()); i < x; i++ {
-		scope.Declare(function.GetParameters()[i].Name, function.GetParameters()[i].Typ)
-		scope.Set(function.GetParameters()[i].Name, function.GetParameters()[i].DefaultValue)
+		functionScope.Declare(function.GetParameters()[i].Name, function.GetParameters()[i].Typ)
+		functionScope.Set(function.GetParameters()[i].Name, function.GetParameters()[i].DefaultValue)
 	}
-	return function.Execute(scope)
-}
-
-func (node *FunctionCallNode) Next() core.Node {
-	return node.next
-}
-
-func (node *FunctionCallNode) SetNext(o core.Node) {
-	node.next = o
+	res := function.Execute(functionScope)
+	return res
 }
 
 type ReturnNode struct {
 	node core.Node
-	next core.Node
 }
 
 func (node *ReturnNode) Execute(scope *core.Scope) *core.Return {
@@ -468,14 +354,6 @@ func (node *ReturnNode) Execute(scope *core.Scope) *core.Return {
 		return internalReturn
 	}
 	return &core.Return{ReturnType: core.RETURN, Pointer: internalReturn.Pointer}
-}
-
-func (node *ReturnNode) Next() core.Node {
-	return node.next
-}
-
-func (node *ReturnNode) SetNext(o core.Node) {
-	node.next = o
 }
 
 func Compile(node *parser.ParseNode, scope *core.Scope) (core.Node, error) {
@@ -501,7 +379,7 @@ func parseBlock(node *parser.ParseNode, scope *core.Scope, expectedType *core.Ty
 		node = node.Next()
 	}
 	if expectedType != nil {
-		_, b := prev.(*ReturnNode)
+		_, b := prev.Root().(*ReturnNode)
 		if !b {
 			return nil, errors.New("expected return statement " + lastNode.GetToken().ToString())
 		}
@@ -510,7 +388,31 @@ func parseBlock(node *parser.ParseNode, scope *core.Scope, expectedType *core.Ty
 }
 
 func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, expectedReturnType *core.Type) (core.Node, *core.Type, error) {
+	nodeRoot, typ, err := createNodeRoot(node, scope, conditional, expectedReturnType)
+	if err != nil {
+		return nil, nil, err
+	}
+	return core.NewNode(nodeRoot, node.GetToken().ToString()), typ, nil
+}
+
+func createNodeRoot(node *parser.ParseNode, scope *core.Scope, conditional bool, expectedReturnType *core.Type) (core.NodeRoot, *core.Type, error) {
 	switch node.GetType() {
+	case parser.Less:
+		l, lt, err := createNode(node.GetChildren()[0], scope, false, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		r, rt, err := createNode(node.GetChildren()[1], scope, false, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !lt.IsCompatible(builtin.IntegerType) {
+			return nil, nil, errors.New("incompatible type for operation < " + node.GetChildren()[0].GetToken().ToString())
+		}
+		if !rt.IsCompatible(builtin.IntegerType) {
+			return nil, nil, errors.New("incompatible type for operation < " + node.GetChildren()[1].GetToken().ToString())
+		}
+		return &LessNode{left: l, right: r}, builtin.BooleanType, nil
 	case parser.Csv:
 		var children []core.Node
 		var childrenNodeType []*core.Type
@@ -535,14 +437,35 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		if lt.IsCompatible(builtin.IntegerType) && rt.IsCompatible(builtin.IntegerType) {
 			return &SummationNode{left: l, right: r}, builtin.IntegerType, nil
 		}
-		if lt.IsCompatible(builtin.StringType) && rt.IsCompatible(builtin.StringType) {
-			return &ConcatenationNode{left: l, right: r}, builtin.StringType, nil
+		if lt.IsCompatible(core.StringType) && rt.IsCompatible(core.StringType) {
+			return &ConcatenationNode{left: l, right: r}, core.StringType, nil
 		}
-		if !lt.IsCompatible(builtin.StringType) {
+		if !lt.IsCompatible(core.StringType) {
 			return nil, nil, errors.New("incompatible type for operation  " + node.GetChildren()[0].GetToken().ToString())
 		}
 		return nil, nil, errors.New("incompatible type for operation  " + node.GetChildren()[1].GetToken().ToString())
 	case parser.Subtraction:
+		var l core.Node
+		var lt *core.Type
+		var err error
+		if node.GetChildren()[0] != nil {
+			l, lt, err = createNode(node.GetChildren()[0], scope, false, nil)
+			if err != nil {
+				return nil, nil, err
+			}
+			if !lt.IsCompatible(builtin.IntegerType) {
+				return nil, nil, errors.New("incompatible type for operation - " + node.GetChildren()[0].GetToken().ToString())
+			}
+		}
+		r, rt, err := createNode(node.GetChildren()[1], scope, false, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !rt.IsCompatible(builtin.IntegerType) {
+			return nil, nil, errors.New("incompatible type for operation - " + node.GetChildren()[1].GetToken().ToString())
+		}
+		return &SubtractionNode{left: l, right: r}, builtin.IntegerType, nil
+	case parser.Divide:
 		l, lt, err := createNode(node.GetChildren()[0], scope, false, nil)
 		if err != nil {
 			return nil, nil, err
@@ -552,12 +475,12 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 			return nil, nil, err
 		}
 		if !lt.IsCompatible(builtin.IntegerType) {
-			return nil, nil, errors.New("incompatible type for operation - " + node.GetChildren()[0].GetToken().ToString())
+			return nil, nil, errors.New("incompatible type for operation / " + node.GetChildren()[0].GetToken().ToString())
 		}
 		if !rt.IsCompatible(builtin.IntegerType) {
-			return nil, nil, errors.New("incompatible type for operation - " + node.GetChildren()[1].GetToken().ToString())
+			return nil, nil, errors.New("incompatible type for operation / " + node.GetChildren()[1].GetToken().ToString())
 		}
-		return &SubtractionNode{left: l, right: r}, builtin.IntegerType, nil
+		return &DivisionNode{left: l, right: r}, builtin.IntegerType, nil
 	case parser.Equal:
 		l, lt, err := createNode(node.GetChildren()[0], scope, false, nil)
 		if err != nil {
@@ -594,14 +517,14 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		if scope.Get(node.GetToken().GetValue()) == nil {
 			return nil, nil, errors.New(node.GetToken().GetValue() + " is not declared " + node.GetToken().ToString())
 		}
-		return &VariableNode{name: node.GetToken().GetValue()}, scope.Get(node.GetToken().GetValue()).Typ, nil
+		return &VariableNode{name: node.GetToken().GetValue()}, scope.MustGet(node.GetToken().GetValue()).Typ, nil
 	case parser.String:
-		return &StringNode{value: node.GetToken().GetValue()}, builtin.StringType, nil
+		return &StringNode{value: node.GetToken().GetValue()}, core.StringType, nil
 	case parser.Integer:
 		i, _ := strconv.Atoi(node.GetToken().GetValue())
 		return &IntegerNode{value: i}, builtin.IntegerType, nil
 	case parser.FunctionCall:
-		t := scope.Get(node.GetToken().GetValue())
+		t := scope.MustGet(node.GetToken().GetValue())
 		if t == nil {
 			return nil, nil, errors.New("function " + node.GetToken().GetValue() + " is not defined " + node.GetToken().ToString())
 		} else if !t.Typ.IsCompatible(builtin.FunctionType) {
@@ -646,11 +569,11 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 	case parser.Declaration:
 		switch node.GetToken().GetValue() {
 		case "var":
-			scope.Declare(node.GetToken2().GetValue(), builtin.VariableType)
-			return &DeclarationNode{typ: builtin.VariableType, identifier: node.GetToken2().GetValue()}, builtin.VariableType, nil
+			scope.Declare(node.GetToken2().GetValue(), core.VariableType)
+			return &DeclarationNode{typ: core.VariableType, identifier: node.GetToken2().GetValue()}, core.VariableType, nil
 		case "string":
-			scope.Declare(node.GetToken2().GetValue(), builtin.StringType)
-			return &DeclarationNode{typ: builtin.StringType, identifier: node.GetToken2().GetValue()}, builtin.StringType, nil
+			scope.Declare(node.GetToken2().GetValue(), core.StringType)
+			return &DeclarationNode{typ: core.StringType, identifier: node.GetToken2().GetValue()}, core.StringType, nil
 		case "int":
 			scope.Declare(node.GetToken2().GetValue(), builtin.IntegerType)
 			return &DeclarationNode{typ: builtin.IntegerType, identifier: node.GetToken2().GetValue()}, builtin.IntegerType, nil
@@ -697,7 +620,10 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		if t1 != builtin.BooleanType {
 			return nil, nil, errors.New("expected boolean " + node.GetChildren()[0].GetToken().ToString())
 		}
-		root, err := parseBlock(node.GetChildren()[1], scope, nil)
+		root, err := parseBlock(node.GetChildren()[1], scope, expectedReturnType)
+		if err != nil {
+			return nil, nil, err
+		}
 		return &ConditionNode{condition: condition, root: root}, nil, nil
 	case parser.While:
 		condition, t1, err := createNode(node.GetChildren()[0], scope, true, nil)
@@ -707,7 +633,7 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		if t1 != builtin.BooleanType {
 			return nil, nil, errors.New("expected boolean " + node.GetChildren()[0].GetToken().ToString())
 		}
-		root, err := parseBlock(node.GetChildren()[1], scope, nil)
+		root, err := parseBlock(node.GetChildren()[1], scope, expectedReturnType)
 		return &LoopNode{condition: condition, root: root}, nil, nil
 	case parser.Boolean:
 		return &BooleanNode{value: node.GetToken().GetValue() == "true"}, builtin.BooleanType, nil
@@ -723,7 +649,7 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		var returnType *core.Type
 		t3 := node.GetToken3()
 		if t3.GetValue() != "" {
-			t4 := scope.Get(t3.GetValue())
+			t4 := scope.MustGet(t3.GetValue())
 			if t4 == nil || !t4.Typ.IsCompatible(core.TypeType) {
 				return nil, nil, errors.New("unknown return type for function " + t3.ToString())
 			}
@@ -745,7 +671,10 @@ func createNode(node *parser.ParseNode, scope *core.Scope, conditional bool, exp
 		scope.ReleaseBlock()
 		return &FunctionNode{name: node.GetToken2().GetValue(), lambda: false, parameters: parameters, returnType: returnType, entryNode: root}, builtin.FunctionType, nil
 	case parser.Return:
-		temp, typ, err := createNode(node.GetChildren()[0], scope, false, nil)
+		if len(node.GetChildren()) == 0 && expectedReturnType != nil {
+			return nil, nil, errors.New("expected expression after " + node.GetToken().ToString())
+		}
+		temp, typ, err := createNode(node.GetChildren()[0], scope, false, expectedReturnType)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -771,9 +700,9 @@ func parameterize(node *parser.ParseNode, scope *core.Scope) (*core.Parameter, e
 	var typ *core.Type
 	switch node.GetToken().GetValue() {
 	case "var":
-		typ = builtin.VariableType
+		typ = core.VariableType
 	case "string":
-		typ = builtin.StringType
+		typ = core.StringType
 	case "int":
 		typ = builtin.IntegerType
 	default:
