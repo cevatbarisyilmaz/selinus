@@ -1,0 +1,31 @@
+type DoubleLinkedList[var T]()
+    type Node(public T data)
+        public Node prev, next
+        end
+
+    Node current
+
+    function add(T data)
+        if current == null
+            current = Node(data)
+        else
+            current.next = Node(data)
+            end
+        current = current.next
+        end
+
+    function T get()
+        if current.next != null
+            if current.prev != null
+                current = current.prev
+                return current.next.next.data
+            temp = current.next
+            current.next = nil
+            return temp
+        if current != null
+            temp = current
+            current = null
+            return temp.data
+        return null
+
+    end

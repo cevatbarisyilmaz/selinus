@@ -1,0 +1,29 @@
+//Primitive Types
+var
+type
+string
+int
+function
+bool
+
+//Booleans
+true
+false
+
+//Flow Words
+if
+else
+break
+continue
+return
+
+//Loop Words
+while
+for
+foreach
+in
+at
+iro
+
+//Misc
+end
