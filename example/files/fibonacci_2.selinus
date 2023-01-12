@@ -1,4 +1,4 @@
-function int fibonacci(int a)
+func int fibonacci(int a)
     int first = 1
     int second = 0
     int next

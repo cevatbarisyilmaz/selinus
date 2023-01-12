@@ -1,7 +1,7 @@
-function int sum(int a, int b)
+func int sum(int a, int b)
     return a + b
 
-function int sum3(int a, int b, int c)
+func int sum3(int a, int b, int c)
     return sum(sum(a, b), c)
 
 print("Enter the first integer: ")

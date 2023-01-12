@@ -625,7 +625,7 @@ func createNodeRoot(node *parser.ParseNode, scope *core.Scope, conditional bool,
 			return nil, nil, err
 		}
 		return &ConditionNode{condition: condition, root: root}, nil, nil
-	case parser.While:
+	case parser.Loop:
 		condition, t1, err := createNode(node.GetChildren()[0], scope, true, nil)
 		if err != nil {
 			return nil, nil, err

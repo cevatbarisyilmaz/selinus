@@ -30,7 +30,7 @@ const (
 	Gets
 	Variable
 	If
-	While
+	Loop
 	Return
 	Csv
 )
@@ -171,7 +171,7 @@ func getPrecedence(token ParseToken) int {
 		switch token.Token.GetValue() {
 		case lexer.If:
 			fallthrough
-		case lexer.While:
+		case lexer.Loop:
 			fallthrough
 		case lexer.End:
 			fallthrough
@@ -237,7 +237,7 @@ func formBlock(statements [][]ParseToken, i int) (*ParseNode, int, error) {
 		if temp.NodeType == Return {
 			return root, i, nil
 		}
-		if temp.NodeType == If || temp.NodeType == While || temp.NodeType == Function {
+		if temp.NodeType == If || temp.NodeType == Loop || temp.NodeType == Function {
 			child, a, err := formBlock(statements, i+1)
 			i = a
 			if err != nil {
@@ -383,7 +383,7 @@ func formParseNode(tokens []ParseToken) (*ParseNode, error) {
 	case lexer.Keyword:
 		loop := false
 		switch t2.GetValue() {
-		case lexer.While:
+		case lexer.Loop:
 			loop = true
 			fallthrough
 		case lexer.If:
@@ -394,7 +394,7 @@ func formParseNode(tokens []ParseToken) (*ParseNode, error) {
 				}
 				typ := If
 				if loop {
-					typ = While
+					typ = Loop
 				}
 				return &ParseNode{NodeType: typ, Children: []*ParseNode{condition}, next: nil, LexicelToken: t2}, nil
 			}

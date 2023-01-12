@@ -1,3 +1,3 @@
-function println(string text)
+func println(string text)
     print(text + "\n")
     end

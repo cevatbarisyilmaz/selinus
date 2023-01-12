@@ -65,7 +65,7 @@ func importModule(module *module.Module, scope *core.Scope) *core.Return {
 	stream := reader.ReadString(module.RootFile)
 	lexTokens, err := lexer.Lex(stream, module.Name)
 	if err != nil {
-		fmt.Printf("Lexing error: %v", err)
+		fmt.Printf("Scanning error: %v", err)
 		os.Exit(-1)
 	}
 	rootParseNode, err := parser.Parse(lexTokens)

@@ -53,14 +53,14 @@ const (
 )
 
 const (
-	Function = "function"
+	Function = "func"
 	Return   = "return"
 	End      = "end"
 	If       = "if"
 	Else     = "else"
 	True     = "true"
 	False    = "false"
-	While    = "while"
+	Loop     = "loop"
 )
 
 const (
@@ -81,7 +81,7 @@ const (
 )
 
 func isKeyword(word string) bool {
-	keywords := [...]string{Function, Return, End, If, Else, True, False, While}
+	keywords := [...]string{Function, Return, End, If, Else, True, False, Loop}
 	for _, r := range keywords {
 		if r == word {
 			return true
