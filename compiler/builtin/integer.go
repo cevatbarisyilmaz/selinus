@@ -24,6 +24,8 @@ func NewIntegerPointer(value int64) *core.Pointer {
 	}
 }
 
+var IntegerToStringConverterFunctionType = &core.Type{Parent: FunctionType, Name: "convertIntegerToString", Generic: true, Generics: []*core.Type{StringType}}
+
 type IntegerToStringConverterFunction struct{}
 
 func (integerToStringConverterFunction *IntegerToStringConverterFunction) Execute(scope *core.Scope) *core.Return {
@@ -39,21 +41,17 @@ func (integerToStringConverterFunction *IntegerToStringConverterFunction) Execut
 }
 
 func (integerToStringConverterFunction *IntegerToStringConverterFunction) GetType() *core.Type {
-	//TODO implement me
-	panic("implement me")
+	return IntegerToStringConverterFunctionType
 }
 
 func (integerToStringConverterFunction *IntegerToStringConverterFunction) GetParameters() []*core.Parameter {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (integerToStringConverterFunction *IntegerToStringConverterFunction) GetReturnType() *core.Type {
-	//TODO implement me
-	panic("implement me")
+	return StringType
 }
 
 func (integerToStringConverterFunction *IntegerToStringConverterFunction) GetScope() *core.Scope {
-	//TODO implement me
-	panic("implement me")
+	return scope
 }

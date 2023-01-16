@@ -10,3 +10,9 @@ var Block = core.NewScopeBlock(map[string]*core.Pointer{
 	"string": {Typ: core.TypeType, Variable: core.TypeToVariable(StringType)},
 	"func":   {Typ: core.TypeType, Variable: core.TypeToVariable(FunctionType)},
 })
+
+var scope = core.NewScope()
+
+func init() {
+	scope.AddBlock(Block)
+}
