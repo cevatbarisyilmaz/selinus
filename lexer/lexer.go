@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -19,23 +20,23 @@ type LexicalToken struct {
 	File      string
 }
 
-func (token LexicalToken) ToString() string {
+func (token *LexicalToken) ToString() string {
 	return token.Value + " at line " + strconv.Itoa(token.Line) + " position " + strconv.Itoa(token.Position) + " at file " + token.File
 }
 
-func (token LexicalToken) GetType() TokenType {
+func (token *LexicalToken) GetType() TokenType {
 	return token.TokenType
 }
 
-func (token LexicalToken) GetValue() string {
+func (token *LexicalToken) GetValue() string {
 	return token.Value
 }
 
-func (token LexicalToken) GetLine() int {
+func (token *LexicalToken) GetLine() int {
 	return token.Line
 }
 
-func (token LexicalToken) GetPosition() int {
+func (token *LexicalToken) GetPosition() int {
 	return token.Position
 }
 
@@ -61,6 +62,8 @@ const (
 	True     = "true"
 	False    = "false"
 	Loop     = "loop"
+	As       = "as"
+	To       = "to"
 )
 
 const (
@@ -78,10 +81,11 @@ const (
 	Not            = "!"
 	Increase       = "++"
 	Decrease       = "--"
+	Or             = "||"
 )
 
 func isKeyword(word string) bool {
-	keywords := [...]string{Function, Return, End, If, Else, True, False, Loop}
+	keywords := [...]string{Function, Return, End, If, Else, True, False, Loop, As, To}
 	for _, r := range keywords {
 		if r == word {
 			return true
@@ -91,7 +95,7 @@ func isKeyword(word string) bool {
 }
 
 func isOperator(op string) bool {
-	operators := [...]string{Gets, Plus, Minus, Multiply, Divide, Equal, NotEqual, Greater, GreaterOrEqual, Less, LessOrEqual, Not, Increase, Decrease}
+	operators := [...]string{Gets, Plus, Minus, Multiply, Divide, Equal, NotEqual, Greater, GreaterOrEqual, Less, LessOrEqual, Not, Increase, Decrease, Or}
 	for _, r := range operators {
 		if r == op {
 			return true
@@ -106,7 +110,7 @@ type state struct {
 	position      int
 	tokenPosition int
 	tokenLine     int
-	tokens        []LexicalToken
+	tokens        []*LexicalToken
 	reader        *bufio.Reader
 	buffer        bytes.Buffer
 	err           error
@@ -114,7 +118,7 @@ type state struct {
 	file          string
 }
 
-func Lex(br *bufio.Reader, fileName string) ([]LexicalToken, error) {
+func Lex(br *bufio.Reader, fileName string) ([]*LexicalToken, error) {
 	s := &state{file: fileName}
 	s.line = 1
 	s.reader = br
@@ -148,9 +152,13 @@ func Lex(br *bufio.Reader, fileName string) ([]LexicalToken, error) {
 			t := s.tokenTemplate()
 			t.TokenType = NewLine
 			s.tokens = append(s.tokens, t)
-		} else if isOperator(string(s.r)) {
+		} else if strings.Contains("+-*/=|&", string(s.r)) {
 			s.buffer.WriteRune(s.r)
 			s.lexOperator()
+		} else if unicode.IsSpace(s.r) || s.r == 0 {
+
+		} else {
+			s.err = errors.New("unknown character " + string(s.r) + " " + strconv.Itoa(int(s.r)) + " " + s.tokenTemplate().ToString())
 		}
 	}
 	if s.err == io.EOF {
@@ -185,8 +193,8 @@ func (s *state) fallBack() {
 	s.position = s.oldPosition
 }
 
-func (s *state) tokenTemplate() LexicalToken {
-	return LexicalToken{Line: s.tokenLine, Position: s.tokenPosition, Value: s.buffer.String(), File: s.file}
+func (s *state) tokenTemplate() *LexicalToken {
+	return &LexicalToken{Line: s.tokenLine, Position: s.tokenPosition, Value: s.buffer.String(), File: s.file}
 }
 
 func (s *state) lexIdentifierOrKeyword() {
@@ -285,7 +293,7 @@ func (s *state) lexOperator() {
 			s.lexOperatorEnd()
 			return
 		}
-		if isOperator(string(s.r)) && isOperator(s.buffer.String()+string(s.r)) {
+		if isOperator(s.buffer.String() + string(s.r)) {
 			s.buffer.WriteRune(s.r)
 		} else {
 			s.lexOperatorEnd()
@@ -297,6 +305,9 @@ func (s *state) lexOperator() {
 
 func (s *state) lexOperatorEnd() {
 	t := s.tokenTemplate()
+	if !isOperator(t.Value) {
+		s.err = errors.New("unknown operator " + t.ToString())
+	}
 	t.TokenType = Operator
 	s.tokens = append(s.tokens, t)
 }

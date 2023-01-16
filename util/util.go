@@ -13,3 +13,11 @@ func PrettyPrint(obj interface{}) {
 	s, _ := json.MarshalIndent(obj, "", "\t")
 	fmt.Println(string(s))
 }
+
+func PrettyString(obj interface{}) string {
+	if obj == nil {
+		return "<nil>"
+	}
+	s, _ := json.MarshalIndent(obj, "", "\t")
+	return string(s)
+}

@@ -26,6 +26,9 @@ type Scope struct {
 }
 
 func (scope *Scope) Clone() *Scope {
+	if scope == nil {
+		panic("cloning a nil scope")
+	}
 	return &Scope{Blocks: append([]*ScopeBlock(nil), scope.Blocks...), Name: scope.Name + "-Copy"}
 }
 
@@ -51,6 +54,16 @@ func (scope *Scope) AddBlock(block *ScopeBlock) {
 
 func (scope *Scope) CreateBlock() {
 	scope.Blocks = append(scope.Blocks, NewEmptyScopeBlock())
+}
+
+func (scope *Scope) WithNewBlock(f func(scope *Scope)) {
+	scope.CreateBlock()
+	f(scope)
+	scope.ReleaseBlock()
+}
+
+func (scope *Scope) CloneWithNewBlock(f func(*Scope)) {
+	scope.Clone().WithNewBlock(f)
 }
 
 func (scope *Scope) ReleaseBlock() {

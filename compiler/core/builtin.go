@@ -1,16 +1,10 @@
 package core
 
-//Built-in Types
+var VariableType = &Type{Name: "VariableInterface", Parent: nil, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
 
-//Base Type
+var StringType = &Type{Name: "String", Parent: VariableType, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
 
-var VariableType = &Type{Name: "Variable", Parent: nil, Functions: nil}
-
-//Variable Sub-Types
-
-var StringType = &Type{Name: "String", Parent: VariableType, Functions: nil}
-
-var StackTraceType = &Type{Name: "StackTrace", Parent: StringType, Functions: nil}
+var StackTraceType = &Type{Name: "StackTrace", Parent: VariableType, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
 
 type String struct {
 	Value string
@@ -27,7 +21,7 @@ func (s *String) GetStringValue() string {
 func NewStringPointer(value string) *Pointer {
 	return &Pointer{
 		Typ:      StringType,
-		Variable: &String{Value: value},
+		Variable: NewVariable(&String{Value: value}),
 	}
 }
 
@@ -56,7 +50,7 @@ func (s *StackTrace) GetStringValue() string {
 func NewStackTracePointer(exceptionMessage string) *Pointer {
 	return &Pointer{
 		Typ:      StackTraceType,
-		Variable: &StackTrace{ExceptionMessage: exceptionMessage},
+		Variable: NewVariable(&StackTrace{ExceptionMessage: exceptionMessage}),
 	}
 }
 
@@ -71,6 +65,6 @@ func AddPositionToStackTrace(r *Return, position string) *Return {
 	if r.ReturnType != EXCEPTION {
 		return r
 	}
-	r.Pointer.Variable.(*StackTrace).AddPosition(position)
+	r.Pointer.Variable.VariableInterface.(*StackTrace).AddPosition(position)
 	return r
 }

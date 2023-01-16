@@ -11,6 +11,9 @@ import (
 //go:embed files/helloworld.selinus
 var helloWorldTest string
 
+//go:embed files/recursive_fibonacci.selinus
+var recursiveFibonacciTest string
+
 var examples = []*struct {
 	testFileContent string
 	testFilePath    string
@@ -20,6 +23,11 @@ var examples = []*struct {
 		testFileContent: helloWorldTest,
 		testFilePath:    "helloworld.selinus",
 		expectedOutput:  "Hello World!\n",
+	},
+	{
+		testFileContent: recursiveFibonacciTest,
+		testFilePath:    "recursive_fibonacci.selinus",
+		expectedOutput:  "Fibonacci 0: 0\nFibonacci 1: 1\nFibonacci 2: 1\nFibonacci 3: 2\nFibonacci 4: 3\nFibonacci 5: 5\nFibonacci 6: 8\nFibonacci 7: 13\nFibonacci 8: 21\nFibonacci 9: 34\nFibonacci 10: 55\n",
 	},
 }
 

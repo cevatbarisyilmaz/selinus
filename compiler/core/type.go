@@ -1,11 +1,27 @@
 package core
 
 type Type struct {
-	Name      string
-	Parent    *Type
-	Functions []*Function
-	Generic   bool
-	Generics  []*Type
+	Name       string
+	Scope      *Scope
+	Parent     *Type
+	Methods    map[string]Function
+	Converters map[*Type]Function
+	Generic    bool
+	Generics   []*Type
+}
+
+func (typ *Type) Is(other *Type) bool {
+	return typ == other
+}
+
+func (typ *Type) IsConvertable(other *Type) bool {
+	if typ == other {
+		return true
+	}
+	if typ.Converters[other] != nil {
+		return true
+	}
+	return false
 }
 
 func (typ *Type) IsCompatible(other *Type) bool {
@@ -34,7 +50,7 @@ func (typ *Type) IsCompatible(other *Type) bool {
 	return false
 }
 
-var TypeType = &Type{Name: "Type", Parent: nil, Functions: nil}
+var TypeType = &Type{Name: "Type", Parent: nil, Methods: nil}
 
 type TypeVariable struct {
 	Value *Type
@@ -48,6 +64,6 @@ func (t *TypeVariable) GetStringValue() string {
 	return t.Value.Name
 }
 
-func TypeToVariable(typ *Type) Variable {
-	return &TypeVariable{Value: typ}
+func TypeToVariable(typ *Type) *Variable {
+	return NewVariable(&TypeVariable{Value: typ})
 }

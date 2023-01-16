@@ -8,9 +8,9 @@ import (
 	"os"
 )
 
-var PrintFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "print", Functions: nil, Generic: true, Generics: []*core.Type{nil, core.StringType}}
+var PrintFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "print", Methods: nil, Generic: true, Generics: []*core.Type{nil, core.StringType}}
 
-var ScanIntegerFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "scanInteger", Functions: nil, Generic: true, Generics: []*core.Type{builtin.IntegerType}}
+var ScanIntegerFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "scanInteger", Methods: nil, Generic: true, Generics: []*core.Type{builtin.IntegerType}}
 
 var defaultOutputWriter io.Writer = os.Stdout
 
@@ -25,8 +25,11 @@ func (*PrintFunction) Execute(scope *core.Scope) *core.Return {
 	if scopeResult.ReturnType != core.NOTHING {
 		return scopeResult
 	}
-	a, _ := scopeResult.Pointer.Variable.(builtin.StringInterface)
-	_, err := fmt.Fprint(defaultOutputWriter, a.GetStringValue())
+	r := scopeResult.Pointer.Variable.ConvertTo(core.StringType)
+	if r.ReturnType != core.NOTHING {
+		return r
+	}
+	_, err := fmt.Fprint(defaultOutputWriter, r.Pointer.Variable.VariableInterface.(*core.String).Value)
 	if err != nil {
 		return core.NewExceptionReturn("print failed: " + err.Error())
 	}
@@ -38,7 +41,7 @@ func (*PrintFunction) GetType() *core.Type {
 }
 
 func (*PrintFunction) GetParameters() []*core.Parameter {
-	return []*core.Parameter{{Name: "text", Typ: core.StringType, DefaultValue: &core.Pointer{Typ: core.StringType, Variable: &core.String{Value: ""}}}}
+	return []*core.Parameter{{Name: "text", Typ: core.StringType, DefaultValue: core.NewStringPointer("")}}
 }
 
 func (*PrintFunction) GetReturnType() *core.Type {
@@ -52,12 +55,12 @@ func (*PrintFunction) GetScope() *core.Scope {
 type ScanIntegerFunction struct{}
 
 func (*ScanIntegerFunction) Execute(scope *core.Scope) *core.Return {
-	var i int
+	var i int64
 	_, err := fmt.Scanf("%d", &i)
 	if err != nil {
 		return core.NewExceptionReturn(fmt.Sprintf("scanInteger: %v", err))
 	}
-	return &core.Return{Pointer: &core.Pointer{Typ: builtin.IntegerType, Variable: &builtin.Integer{Value: i}}, ReturnType: core.NOTHING}
+	return &core.Return{Pointer: builtin.NewIntegerPointer(i), ReturnType: core.NOTHING}
 }
 
 func (*ScanIntegerFunction) GetType() *core.Type {
@@ -76,8 +79,8 @@ func (*ScanIntegerFunction) GetScope() *core.Scope {
 	return scope
 }
 
-var printFunction core.Variable = &PrintFunction{}
-var scanIntegerFunction core.Variable = &ScanIntegerFunction{}
+var printFunction core.VariableInterface = &PrintFunction{}
+var scanIntegerFunction core.VariableInterface = &ScanIntegerFunction{}
 
 var scope = core.NewScopeWithName("native")
 
@@ -86,6 +89,6 @@ func init() {
 }
 
 var Block = core.NewScopeBlock(map[string]*core.Pointer{
-	"print":       {Typ: PrintFunctionType, Variable: printFunction},
-	"scanInteger": {Typ: ScanIntegerFunctionType, Variable: scanIntegerFunction},
+	"print":       {Typ: PrintFunctionType, Variable: core.NewVariable(printFunction)},
+	"scanInteger": {Typ: ScanIntegerFunctionType, Variable: core.NewVariable(scanIntegerFunction)},
 })

@@ -45,7 +45,7 @@ func Run(filePath, fileContent string) int {
 	}
 	res := executer.Execute(rootCompileNode, scope)
 	if res.ReturnType == core.EXCEPTION {
-		fmt.Println(res.Pointer.Variable.(*core.StackTrace).GetStringValue())
+		fmt.Println(res.Pointer.Variable.VariableInterface.(*core.StackTrace).GetStringValue())
 		return 1
 	} else {
 		return 0
