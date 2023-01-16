@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var PrintFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "print", Methods: nil, Generic: true, Generics: []*core.Type{nil, core.StringType}}
+var PrintFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "print", Methods: nil, Generic: true, Generics: []*core.Type{nil, builtin.StringType}}
 
 var ScanIntegerFunctionType = &core.Type{Parent: builtin.FunctionType, Name: "scanInteger", Methods: nil, Generic: true, Generics: []*core.Type{builtin.IntegerType}}
 
@@ -25,11 +25,11 @@ func (*PrintFunction) Execute(scope *core.Scope) *core.Return {
 	if scopeResult.ReturnType != core.NOTHING {
 		return scopeResult
 	}
-	r := scopeResult.Pointer.Variable.ConvertTo(core.StringType)
+	r := scopeResult.Pointer.Variable.ConvertTo(builtin.StringType)
 	if r.ReturnType != core.NOTHING {
 		return r
 	}
-	_, err := fmt.Fprint(defaultOutputWriter, r.Pointer.Variable.VariableInterface.(*core.String).Value)
+	_, err := fmt.Fprint(defaultOutputWriter, r.Pointer.Variable.VariableInterface.(*builtin.String).Value)
 	if err != nil {
 		return core.NewExceptionReturn("print failed: " + err.Error())
 	}
@@ -41,7 +41,7 @@ func (*PrintFunction) GetType() *core.Type {
 }
 
 func (*PrintFunction) GetParameters() []*core.Parameter {
-	return []*core.Parameter{{Name: "text", Typ: core.StringType, DefaultValue: core.NewStringPointer("")}}
+	return []*core.Parameter{{Name: "text", Typ: builtin.StringType, DefaultValue: builtin.NewStringPointer("")}}
 }
 
 func (*PrintFunction) GetReturnType() *core.Type {

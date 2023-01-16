@@ -1,5 +1,7 @@
 package core
 
+var VariableType = &Type{Name: "VariableInterface", Parent: nil, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
+
 type VariableInterface interface {
 	GetType() *Type
 }

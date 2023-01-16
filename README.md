@@ -2,7 +2,13 @@
 
 Selinus is a general purpose programming language project that is in very early development.
 
-Some working code examples:
+## How to Run
+
+```
+go run cmd/selinus/selinus.go example/files/helloworld.selinus
+```
+
+## Working Examples
 
 ### Hello World
 ```selinus

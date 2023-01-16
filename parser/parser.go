@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cevatbarisyilmaz/selinus/lexer"
-	"github.com/cevatbarisyilmaz/selinus/util"
 	"strconv"
 )
 
@@ -245,7 +244,7 @@ func getPrecedence(token *ParseToken) int {
 	case lexer.Text:
 		return 8
 	}
-	panic(fmt.Sprint("unknown token ", util.PrettyString(token)))
+	panic(fmt.Sprintf("unknown token %v", token))
 }
 
 func formBlock(statements [][]*ParseToken, i int) (*ParseNode, int, error) {
@@ -387,13 +386,13 @@ func formParseNode(tokens []*ParseToken, isStatement bool) (*ParseNode, error) {
 	case lexer.Text:
 		if len(tokens) != 1 {
 			if len(tokens) != 1 {
-				return nil, errors.New("unexpected Token " + tokens[1].Token.ToString() + " / 2")
+				return nil, errors.New("unexpected Token " + tokens[1].Token.ToString())
 			}
 		}
 		return &ParseNode{NodeType: String, MainLexicalToken: t2}, nil
 	case lexer.Integer:
 		if len(tokens) != 1 {
-			return nil, errors.New("unexpected token " + tokens[1].Token.ToString() + " / 3 " + util.PrettyString(tokens))
+			return nil, errors.New("unexpected token " + tokens[1].Token.ToString())
 		}
 		return &ParseNode{NodeType: Integer, MainLexicalToken: t2}, nil
 	case lexer.Identifier:
@@ -406,7 +405,7 @@ func formParseNode(tokens []*ParseToken, isStatement bool) (*ParseNode, error) {
 			}
 			if tokens[1].Group {
 				if len(tokens) > 2 {
-					return nil, errors.New("unexpected Token " + tokens[2].Token.ToString() + " / 4")
+					return nil, errors.New("unexpected Token " + tokens[2].Token.ToString())
 				}
 				parameter, err := formParseNode(tokens[1].Tokens, false)
 				if err != nil {

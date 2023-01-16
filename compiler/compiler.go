@@ -26,7 +26,7 @@ type StringNode struct {
 }
 
 func (node *StringNode) Execute(scope *core.Scope) *core.Return {
-	return &core.Return{ReturnType: core.NOTHING, Pointer: core.NewStringPointer(node.value)}
+	return &core.Return{ReturnType: core.NOTHING, Pointer: builtin.NewStringPointer(node.value)}
 }
 
 type BooleanNode struct {
@@ -385,7 +385,7 @@ func (node *ConcatenationNode) Execute(scope *core.Scope) *core.Return {
 	if l.ReturnType != core.NOTHING {
 		return l
 	}
-	ls := l.Pointer.Variable.ConvertTo(core.StringType)
+	ls := l.Pointer.Variable.ConvertTo(builtin.StringType)
 	if ls.ReturnType != core.NOTHING {
 		return ls
 	}
@@ -393,12 +393,12 @@ func (node *ConcatenationNode) Execute(scope *core.Scope) *core.Return {
 	if r.ReturnType != core.NOTHING {
 		return r
 	}
-	rs := r.Pointer.Variable.ConvertTo(core.StringType)
+	rs := r.Pointer.Variable.ConvertTo(builtin.StringType)
 	if rs.ReturnType != core.NOTHING {
 		return rs
 	}
-	variable := core.NewVariable(&core.String{Value: ls.Pointer.Variable.VariableInterface.(*core.String).Value + rs.Pointer.Variable.VariableInterface.(*core.String).Value})
-	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: core.StringType, Variable: variable}}
+	variable := core.NewVariable(&builtin.String{Value: ls.Pointer.Variable.VariableInterface.(*builtin.String).Value + rs.Pointer.Variable.VariableInterface.(*builtin.String).Value})
+	return &core.Return{ReturnType: core.NOTHING, Pointer: &core.Pointer{Typ: builtin.StringType, Variable: variable}}
 }
 
 type FunctionCallNode struct {
@@ -540,8 +540,8 @@ func createNodeRoot(node *parser.ParseNode, scope *core.Scope, conditional bool,
 		if lt.IsConvertable(builtin.IntegerType) && rt.IsConvertable(builtin.IntegerType) {
 			return &SummationNode{left: l, right: r}, builtin.IntegerType, nil
 		}
-		if lt.IsConvertable(core.StringType) && rt.IsConvertable(core.StringType) {
-			return &ConcatenationNode{left: l, right: r}, core.StringType, nil
+		if lt.IsConvertable(builtin.StringType) && rt.IsConvertable(builtin.StringType) {
+			return &ConcatenationNode{left: l, right: r}, builtin.StringType, nil
 		}
 		return nil, nil, errors.New("incompatible types " + lt.Name + " and " + rt.Name + " for operation  " + node.MainLexicalToken.ToString())
 	case parser.Subtraction:
@@ -620,7 +620,7 @@ func createNodeRoot(node *parser.ParseNode, scope *core.Scope, conditional bool,
 		}
 		return &VariableNode{name: node.GetMainToken().GetValue()}, res.Pointer.Typ, nil
 	case parser.String:
-		return &StringNode{value: node.GetMainToken().GetValue()}, core.StringType, nil
+		return &StringNode{value: node.GetMainToken().GetValue()}, builtin.StringType, nil
 	case parser.Integer:
 		i, _ := strconv.ParseInt(node.GetMainToken().GetValue(), 10, 64)
 		return &IntegerNode{value: i}, builtin.IntegerType, nil
@@ -673,8 +673,8 @@ func createNodeRoot(node *parser.ParseNode, scope *core.Scope, conditional bool,
 			scope.Declare(node.GetTokenWithKey(parser.Identifier).GetValue(), core.VariableType)
 			return &DeclarationNode{typ: core.VariableType, identifier: node.GetTokenWithKey(parser.Identifier).GetValue()}, core.VariableType, nil
 		case "string":
-			scope.Declare(node.GetTokenWithKey(parser.Identifier).GetValue(), core.StringType)
-			return &DeclarationNode{typ: core.StringType, identifier: node.GetTokenWithKey(parser.Identifier).GetValue()}, core.StringType, nil
+			scope.Declare(node.GetTokenWithKey(parser.Identifier).GetValue(), builtin.StringType)
+			return &DeclarationNode{typ: builtin.StringType, identifier: node.GetTokenWithKey(parser.Identifier).GetValue()}, builtin.StringType, nil
 		case "int":
 			scope.Declare(node.GetTokenWithKey(parser.Identifier).GetValue(), builtin.IntegerType)
 			return &DeclarationNode{typ: builtin.IntegerType, identifier: node.GetTokenWithKey(parser.Identifier).GetValue()}, builtin.IntegerType, nil
@@ -824,7 +824,7 @@ func parameterize(node *parser.ParseNode, scope *core.Scope) (*core.Parameter, e
 	case "var":
 		typ = core.VariableType
 	case "string":
-		typ = core.StringType
+		typ = builtin.StringType
 	case "int":
 		typ = builtin.IntegerType
 	default:

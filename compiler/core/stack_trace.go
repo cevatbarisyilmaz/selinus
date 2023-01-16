@@ -1,29 +1,6 @@
 package core
 
-var VariableType = &Type{Name: "VariableInterface", Parent: nil, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
-
-var StringType = &Type{Name: "String", Parent: VariableType, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
-
 var StackTraceType = &Type{Name: "StackTrace", Parent: VariableType, Methods: map[string]Function{}, Converters: map[*Type]Function{}, Scope: NewScope()}
-
-type String struct {
-	Value string
-}
-
-func (*String) GetType() *Type {
-	return StringType
-}
-
-func (s *String) GetStringValue() string {
-	return s.Value
-}
-
-func NewStringPointer(value string) *Pointer {
-	return &Pointer{
-		Typ:      StringType,
-		Variable: NewVariable(&String{Value: value}),
-	}
-}
 
 type StackTrace struct {
 	ExceptionMessage string
