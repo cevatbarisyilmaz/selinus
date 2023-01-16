@@ -12,7 +12,7 @@ go run cmd/selinus/selinus.go example/files/helloworld.selinus
 
 ### Hello World
 ```selinus
-println("Hello World!")
+println("Hello, World!")
 ```
 
 ### Recursive Fibonacci

@@ -22,7 +22,7 @@ var examples = []*struct {
 	{
 		testFileContent: helloWorldTest,
 		testFilePath:    "helloworld.selinus",
-		expectedOutput:  "Hello World!\n",
+		expectedOutput:  "Hello, World!\n",
 	},
 	{
 		testFileContent: recursiveFibonacciTest,
